@@ -8,16 +8,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
-- Core entities: Grant, Funder, DevTeamMember
-- Comprehensive test suite (60 tests)
-- Standard .gitignore for Python projects
-- This CHANGELOG
+- **Opportunity-centric entity model**: Replaced monolithic Grant entity with opportunity-focused design
+  - `Opportunity`: Minimal identity anchor for funding relationships
+  - `Proposal`: Full grant applications with award tracking
+  - `Report`: Grant reporting requirements (no award fields)
+  - `LOI`: Letters of intent with invitation tracking
+  - `Prospect`: Early-stage research opportunities
+  - `Document`: Historical files with opportunity linking
+- **Writing Schedule adapter**: Schema and parser for external data ingestion (data/adapters/writing_schedule/)
+- **CRM adapter structure**: Placeholder for Bloomerang integration (data/adapters/constituent_relationship_manager/)
+- **Value objects**: OpportunityOverview, TaskSummary for explicit result contracts
+- **Comprehensive documentation**: ARCHITECTURE.md, Categoriae Layer: Domain Entities.md
+- **Layer-by-layer roadmap**: Implementation plan organized by architectural layers (.github/LAYER_BY_LAYER_ROADMAP.md)
+- **GitHub issues**: 5 issues tracking implementation milestones (#1-#5)
 
-### Architecture
-- Four-layer clean architecture (CATEGORIAE/ETHICA/RHETORICA/POLITICA)
-- Pure domain entities with no framework coupling
-- Value objects for explicit contracts
-- Generic storage layer
+### Changed
+- Removed monolithic `Grant` entity in favor of type-specific task entities
+- Updated entity structure to support master task routing table pattern
+
+### Architecture Decisions
+- **Task entities**: Separate tables (proposals, reports, lois) with master task table for routing by task_id
+- **Opportunity grouping**: Manual creation (not auto-derived from Writing Schedule)
+- **Document linking**: Manual association (no fuzzy matching initially)
+- **Business logic location**: Pure functions in ethica layer, not entity methods
+
+### In Progress
+- Issue #1: Fix categoriae layer entities (Prospect FK, Document FKs, validation)
+- Issue #2: Implement politica layer (Database class + SQL schemas)
+- Issue #3: Implement rhetorica layer (repositories)
+- Issue #4: Implement ethica layer (business logic functions)
+- Issue #5: Data migration from old dashboard
 
 ## [0.1.0] - 2025-10-28
 

@@ -1,7 +1,7 @@
 """
 Funder Entity - Pure Domain Model
 
-Written by Claude Code on 2025-10-13
+Written by Claude Code on 2025-10-28
 
 PURPOSE: Represents an organization (funder) in the Bernie Number registry
 
@@ -15,7 +15,8 @@ EXTRACTED FROM: Grantwriting_Knowledge_Dashboard funder_registry table schema
 """
 
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
+from datetime import datetime
 
 
 @dataclass
@@ -24,137 +25,78 @@ class Funder:
     Funder entity - what a funder/organization IS
 
     Represents a grant-making organization identified by a unique Bernie Number.
-    Maintains canonical name and all known aliases for matching purposes.
-
-    Domain logic:
-    - has_alias(): Check if a name matches any known variant
-    - matches_name(): Fuzzy name matching against aliases
+    Canonical name represents the official/preferred name.
     """
 
     # Core identification
     bernie_number: str                     # Unique identifier (BN000XXX format)
     canonical_name: str                    # Official/preferred name
 
-    # Name variations for matching
-    all_names: List[str]                   # All known aliases including canonical
-
     # Tax identification
     ein: Optional[str] = None              # 9-digit EIN (may be unknown)
 
     # CRM integration
-    bloomerang_api_cid: Optional[int] = None        # Bloomerang constituent ID
-    bloomerang_account_id: Optional[int] = None     # Bloomerang account number
 
     # System fields
     id: Optional[int] = None               # Database primary key
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     def __post_init__(self):
         """Validate entity at construction - fail fast"""
 
-        # Bernie Number validation
-        if not self.bernie_number:
-            raise ValueError("Funder must have bernie_number")
-
+        # Validate Bernie Number format
         if not self.bernie_number.startswith('BN'):
-            raise ValueError(
-                f"Invalid bernie_number format: {self.bernie_number}. "
-                "Must start with 'BN' (e.g., BN000227)"
-            )
-
+            raise ValueError(f"Bernie Number must start with 'BN': {self.bernie_number}")
         if len(self.bernie_number) != 8:
-            raise ValueError(
-                f"Bernie number must be 8 characters (BN + 6 hex digits), "
-                f"got {len(self.bernie_number)}: {self.bernie_number}"
-            )
+            raise ValueError(f"Bernie Number must be 8 characters: {self.bernie_number}")
 
-        # Canonical name validation
+        # Validate canonical name
         if not self.canonical_name or not self.canonical_name.strip():
-            raise ValueError("Funder must have canonical_name")
+            raise ValueError("Canonical name is required")
 
-        # Ensure all_names includes canonical name
-        if not self.all_names:
-            self.all_names = [self.canonical_name]
-        elif self.canonical_name not in self.all_names:
-            self.all_names.insert(0, self.canonical_name)
-
-        # EIN validation if provided
+        # Validate EIN if provided
         if self.ein is not None:
-            if len(self.ein) != 9:
-                raise ValueError(
-                    f"EIN must be 9 digits, got {len(self.ein)}: {self.ein}"
-                )
-            if not self.ein.isdigit():
-                raise ValueError(f"EIN must be numeric, got: {self.ein}")
-
-    def has_alias(self, name: str) -> bool:
-        """
-        Check if name matches any known alias (case-insensitive)
-
-        Domain logic - pure function, testable without database.
-
-        Args:
-            name: Name to check against aliases
-
-        Returns:
-            True if name matches any alias, False otherwise
-        """
-        if not name:
-            return False
-
-        name_lower = name.lower().strip()
-        return any(alias.lower().strip() == name_lower for alias in self.all_names)
-
-    def matches_name(self, name: str, fuzzy: bool = False) -> bool:
-        """
-        Check if name matches this funder
-
-        Args:
-            name: Name to check
-            fuzzy: If True, use substring matching
-
-        Returns:
-            True if name matches (exact or fuzzy)
-        """
-        if not name:
-            return False
-
-        name_lower = name.lower().strip()
-
-        # Exact match
-        if self.has_alias(name):
-            return True
-
-        # Fuzzy match (substring)
-        if fuzzy:
-            return any(name_lower in alias.lower() or alias.lower() in name_lower
-                      for alias in self.all_names)
-
-        return False
-
-    def add_alias(self, alias: str) -> None:
-        """
-        Add a new alias if not already present
-
-        Note: This mutates the object. In a more strict functional approach,
-        we'd return a new Funder instance. For pragmatism, we allow mutation.
-
-        Args:
-            alias: New alias to add
-        """
-        if not alias or not alias.strip():
-            return
-
-        alias_clean = alias.strip()
-        if not self.has_alias(alias_clean):
-            self.all_names.append(alias_clean)
+            if len(self.ein) != 9 or not self.ein.isdigit():
+                raise ValueError(f"EIN must be 9 digits: {self.ein}")
 
     def __repr__(self) -> str:
         """Developer-friendly representation"""
-        alias_count = len(self.all_names) - 1  # Exclude canonical name
         ein_str = f"ein={self.ein}" if self.ein else "ein=None"
         return (
             f"Funder(bn={self.bernie_number}, "
             f"name='{self.canonical_name}', "
-            f"aliases={alias_count}, "
             f"{ein_str})"
         )
+
+
+@dataclass
+class FunderAlias:
+    """
+    Represents an alias or name variation for a funder.
+
+    One BN (Bernie Number) can have many aliases.
+    Usage field tracks how often this alias appears in historical documents.
+    """
+
+    bernie_number: str  # Foreign key to Funder
+    alias: str               # Alias name variation
+    usage: Optional[str] = None # In what context this alias is used
+
+    # System fields
+    id: Optional[int] = None  # Autoincrementing primary key
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    def __post_init__(self):
+        """Validate entity at construction - fail fast"""
+
+        # Validate Bernie Number format
+        if not self.bernie_number.startswith('BN'):
+            raise ValueError(f"Bernie Number must start with 'BN': {self.bernie_number}")
+        if len(self.bernie_number) != 8:
+            raise ValueError(f"Bernie Number must be 8 characters: {self.bernie_number}")
+
+        # Catches empty or whitespace-only strings
+        if not self.alias or not self.alias.strip():
+            raise ValueError("Alias is required") 
