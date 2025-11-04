@@ -27,7 +27,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from data.adapters.writing_schedule.schema import WritingScheduleRow
-from data.services.writing_schedule_decomposer import decompose_row
+from data.adapters.writing_schedule.parser import decompose_row
 
 
 def connect_source_db() -> sqlite3.Connection:
@@ -271,7 +271,7 @@ def import_row(target_conn: sqlite3.Connection, row: WritingScheduleRow) -> None
     insert_scheduled_task(target_conn, task_data)
 
     # Step 4: Insert type-specific data
-    from data.services.task_service import LOIBlueprint, ProposalBlueprint, ReportBlueprint
+    from data.blueprints import LOIBlueprint, ProposalBlueprint, ReportBlueprint
 
     if isinstance(task_blueprint, LOIBlueprint):
         loi_data = {

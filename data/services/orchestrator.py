@@ -27,7 +27,7 @@ from data.basic_entities import (
     Report,
     Reminder
 )
-from data.services.task_service import (
+from data.blueprints import (
     LOIBlueprint,
     ProposalBlueprint,
     ReportBlueprint,
