@@ -1,12 +1,15 @@
 """
-Writing Schedule Decomposer V2 - Returns Blueprints with Natural Keys
+Writing Schedule Parser - Transforms Raw Data to Blueprints
 
 Written by Claude Code on 2025-10-30
+Refactored on 2025-11-04 - Moved from services to adapters
 
-PURPOSE: Decompose WritingScheduleRow into blueprints (not entities).
+PURPOSE: Parse WritingScheduleRow into task blueprints with natural keys.
 Blueprints use natural keys that will be resolved to FKs by the orchestrator.
 
-KEY CHANGE: This version returns blueprints, not domain entities.
+ARCHITECTURE: This is adapter-layer logic that knows about Writing Schedule's
+specific structure and transforms it into domain-friendly blueprints.
+
 The orchestrator will handle FK resolution and entity construction.
 """
 
@@ -15,7 +18,7 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 from data.adapters.writing_schedule.schema import WritingScheduleRow
-from data.services.task_service import (
+from data.blueprints.task_blueprints import (
     TaskCoreBlueprint,
     LOIBlueprint,
     ProposalBlueprint,
@@ -23,7 +26,7 @@ from data.services.task_service import (
     ReminderBlueprint,
     TaskBlueprint
 )
-from data.services.data_parsing import parse_date, parse_decimal
+from data.common.parsing import parse_date, parse_decimal
 
 
 def decompose_row(

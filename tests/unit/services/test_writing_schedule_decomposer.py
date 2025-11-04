@@ -21,16 +21,16 @@ import pytest
 from datetime import datetime
 from decimal import Decimal
 from data.adapters.writing_schedule.schema import WritingScheduleRow
-from data.services.task_service import (
+from data.blueprints import (
     TaskCoreBlueprint,
     LOIBlueprint,
     ProposalBlueprint,
     ReportBlueprint
 )
 
-# Import decomposer
+# Import parser (formerly decomposer)
 try:
-    from data.services.writing_schedule_decomposer import decompose_row
+    from data.adapters.writing_schedule.parser import decompose_row
     DECOMPOSER_EXISTS = True
 except ImportError:
     DECOMPOSER_EXISTS = False
