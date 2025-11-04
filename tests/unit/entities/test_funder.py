@@ -7,7 +7,7 @@ PURPOSE: Validate Funder entity behavior without mocks or database
 """
 
 import pytest
-from data.entities import Funder
+from data.basic_entities.funder import Funder, FunderAlias
 
 
 class TestFunderConstruction:
@@ -35,7 +35,7 @@ class TestFunderConstruction:
 
     def test_missing_bernie_number_fails(self):
         """Funder without bernie_number raises ValueError"""
-        with pytest.raises(ValueError, match="bernie_number"):
+        with pytest.raises(ValueError, match="Bernie Number must start with 'BN'"):
             Funder(
                 bernie_number='',
                 canonical_name='Test Foundation'
@@ -43,7 +43,7 @@ class TestFunderConstruction:
 
     def test_invalid_bernie_number_format_fails(self):
         """Funder with invalid bernie_number format raises ValueError"""
-        with pytest.raises(ValueError, match="Invalid bernie_number format"):
+        with pytest.raises(ValueError, match="Bernie Number must start with 'BN'"):
             Funder(
                 bernie_number='INVALID',
                 canonical_name='Test Foundation',
@@ -59,7 +59,7 @@ class TestFunderConstruction:
 
     def test_missing_canonical_name_fails(self):
         """Funder without canonical_name raises ValueError"""
-        with pytest.raises(ValueError, match="canonical_name"):
+        with pytest.raises(ValueError, match="Canonical name is required"):
             Funder(
                 bernie_number='BN000227',
                 canonical_name=''
@@ -92,10 +92,40 @@ class TestFunderConstruction:
 
     def test_invalid_ein_format_fails(self):
         """Funder with non-numeric EIN raises ValueError"""
-        with pytest.raises(ValueError, match="EIN must be numeric"):
+        with pytest.raises(ValueError, match="EIN must be 9 digits"):
             Funder(
                 bernie_number='BN000227',
                 canonical_name='Test Foundation',
                 ein='12-345678'  # Contains dash
+            )
+
+
+class TestFunderAliasConstruction:
+    """Test FunderAlias entity construction and validation"""
+
+    def test_valid_alias_creation(self):
+        """Can create valid alias with required fields"""
+        alias = FunderAlias(
+            bernie_number='BN000227',
+            alias='Alternative Name'
+        )
+
+        assert alias.bernie_number == 'BN000227'
+        assert alias.alias == 'Alternative Name'
+
+    def test_missing_alias_fails(self):
+        """Alias without alias text raises ValueError"""
+        with pytest.raises(ValueError, match="Alias is required"):
+            FunderAlias(
+                bernie_number='BN000227',
+                alias=''
+            )
+
+    def test_invalid_bernie_number_fails(self):
+        """Alias with invalid bernie_number raises ValueError"""
+        with pytest.raises(ValueError, match="Bernie Number must start with 'BN'"):
+            FunderAlias(
+                bernie_number='INVALID',
+                alias='Alternative Name'
             )
 

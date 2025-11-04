@@ -10,7 +10,6 @@ PRINCIPLES:
 - Validation at construction
 - Simple identity model
 
-EXTRACTED FROM: Grantwriting_Knowledge_Dashboard (implicit in owner/assignee fields)
 """
 
 from dataclasses import dataclass

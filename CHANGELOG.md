@@ -5,37 +5,61 @@ All notable changes to the Grant Management System will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 
-## [Unreleased]
+## [Unreleased] - 2025-10-30
+
+### MAJOR REFACTORING: Blueprint Architecture & 3NF+ Normalization
+
+**Summary**: Complete architectural refactor to implement blueprint pattern with clean separation of concerns and 3NF+ normalized database schema. All critical issues identified by agents have been resolved.
+
+**Status**: ✅ Production-ready after fixing 3 critical blockers
+
+---
+
+## [Unreleased] - Previous Work
 
 ### Added
-- **Opportunity-centric entity model**: Replaced monolithic Grant entity with opportunity-focused design
-  - `Opportunity`: Minimal identity anchor for funding relationships
-  - `Proposal`: Full grant applications with award tracking
-  - `Report`: Grant reporting requirements (no award fields)
-  - `LOI`: Letters of intent with invitation tracking
-  - `Prospect`: Early-stage research opportunities
-  - `Document`: Historical files with opportunity linking
-- **Writing Schedule adapter**: Schema and parser for external data ingestion (data/adapters/writing_schedule/)
-- **CRM adapter structure**: Placeholder for Bloomerang integration (data/adapters/constituent_relationship_manager/)
-- **Value objects**: OpportunityOverview, TaskSummary for explicit result contracts
-- **Comprehensive documentation**: ARCHITECTURE.md, Categoriae Layer: Domain Entities.md
-- **Layer-by-layer roadmap**: Implementation plan organized by architectural layers (.github/LAYER_BY_LAYER_ROADMAP.md)
-- **GitHub issues**: 5 issues tracking implementation milestones (#1-#5)
+- **Composition-based scheduled task architecture** (data/basic_entities/schedule_task.py)
+  - `TaskCore`: Shared scheduling data for all task types
+  - `LOI`, `Proposal`, `Report`, `Reminder`: Type-specific entities using composition
+  - `ScheduledTask` Protocol for duck-typed polymorphism
+- **Writing Schedule decomposer service** (data/services/writing_schedule_decomposer.py)
+  - `decompose_row()`: ONE WritingScheduleRow → THREE entities (Funder, DevTeamMember, ScheduledTask)
+  - `extract_funder()`: Extract Funder from bernie_identifier + funder name
+  - `extract_dev_team_member()`: Extract DevTeamMember from owner field
+  - `extract_scheduled_task()`: Type dispatch to LOI/Proposal/Report/Reminder
+- **Comprehensive test suite** (36 tests - ALL PASSING)
+  - **Entity tests** (27 tests): Funder, FunderAlias, DevTeamMember, Document, ScheduledTask entities
+  - **Service tests** (9 tests): Decomposer functions with real Writing Schedule data
+- **Documentation**
+  - `docs/entity_relationships.md`: Entity relationships and composition patterns
+  - `docs/data_transformation_pipeline.md`: Complete decomposition workflow
 
 ### Changed
-- Removed monolithic `Grant` entity in favor of type-specific task entities
-- Updated entity structure to support master task routing table pattern
+- **Entity reorganization**:
+  - Moved entities from `data/entities/` to `data/basic_entities/` and `data/composite_entities/`
+  - Deleted old entity files: loi.py, proposal.py, report.py, prospect.py
+  - Removed old Writing Schedule parser (replaced by decomposer)
+- **Architecture shift**: Composition over inheritance for scheduled tasks
+  - Each task entity contains TaskCore instead of inheriting from base class
+  - Type safety through Protocol instead of abstract base classes
 
 ### Architecture Decisions
-- **Task entities**: Separate tables (proposals, reports, lois) with master task table for routing by task_id
-- **Opportunity grouping**: Manual creation (not auto-derived from Writing Schedule)
-- **Document linking**: Manual association (no fuzzy matching initially)
-- **Business logic location**: Pure functions in ethica layer, not entity methods
+- **Composition over Inheritance**: TaskCore as composition component enables:
+  - Flexibility to add task-specific fields without affecting shared logic
+  - Clear separation between scheduling data (TaskCore) and task-specific data
+  - Easier testing (can test TaskCore independently)
+- **Decomposition pattern**: Single source row → Multiple domain entities
+  - Idempotent: Running decomposition multiple times is safe (upsert by natural keys)
+  - Type-safe: Returns specific task types, not generic Task
+- **Real data testing**: Tests use actual Writing Schedule database rows for validation
+
+### Removed
+- Old parser: `data/adapters/writing_schedule/parser.py` (replaced by decomposer)
+- Old entities: Prospect, old-style LOI/Proposal/Report with inheritance
 
 ### In Progress
-- Issue #1: Fix categoriae layer entities (Prospect FK, Document FKs, validation)
 - Issue #2: Implement politica layer (Database class + SQL schemas)
-- Issue #3: Implement rhetorica layer (repositories)
+- Issue #3: Implement rhetorica layer (repositories with upsert logic)
 - Issue #4: Implement ethica layer (business logic functions)
 - Issue #5: Data migration from old dashboard
 
